@@ -15,12 +15,17 @@ class TaskManager:
         "open_gripper",
         "close_gripper",
         "get_robot_state",
+        "look_at_table",
+        "get_arm_status",
     }
 
     COMPLEX_INTENTS = {
         "navigate_to",
         "pick_object",
         "place_object",
+        "sort_object",
+        "sort_all_objects",
+        "arm_return_home",
     }
 
     def __init__(self, tool_registry):

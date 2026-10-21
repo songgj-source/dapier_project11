@@ -68,4 +68,21 @@ LLM은 관절 위치, 토크, raw actuator 값을 직접 발행하지 않습니�
 4. NOMI adapter와 Harness를 연결하고 evidence 없이는 success가 되지 않는지 검증합니다.
 5. MuJoCo/Mock 테스트 뒤 실물 하드웨어 시험은 별도 안전 승인을 받습니다.
 
-현재 암 동작 및 NOMI Manipulation Skill 통합은 완료되지 않았습니다.
+## 진공흡착 로봇팔 연결 (feature/robot-arm)
+
+진공흡착 로봇팔(SO-101 4축, 트레이 1·2·3번 칸)은 별도 PC에서 REST API로 동작합니다. NOMI는 `nomi_agent/skills/arm_rest_skill.py`(ArmRestSkill)로 이 API를 부릅니다. 이 팔은 집기와 놓기가 한 번에 묶여 있어 `pick_object`/`place_object` 대신 아래 도구를 씁니다.
+
+| Tool | 인자 | REST | 완료 기준 |
+|---|---|---|---|
+| look_at_table | 없음 | POST /api/image | 읽기 전용. 보이는 물체·쓸 수 있는 메뉴(사진 base64는 뺌) |
+| get_arm_status | 없음 | GET /status | 읽기 전용 |
+| sort_object | object_name(white_box/red_cube/tape_measure/unknown), slot(1~3, 선택) | POST /api/menu/1~3·5·7 | /tasks/<id>가 done이고 result.ok일 때만 completion_verified |
+| sort_all_objects | 없음 | POST /api/menu/4 | 같음 |
+| arm_return_home | 없음 | POST /api/menu/6 | 같음 |
+
+- 칸을 말하지 않으면 기본 칸(흰 상자 1, 빨간 정육면체 2, 줄자 3)입니다. unknown은 칸이 꼭 필요합니다.
+- 취소·비상정지: `ToolRegistry.emergency_stop()`이 주행과 로봇팔(`POST /stop`)을 모두 멈춥니다. Skill 대기 시간이 넘으면 Skill이 직접 정지를 보냅니다.
+- 설정: `.env`의 `ARM_API_URL`, `ARM_API_TOKEN`.
+- 시험: `tests/test_arm_rest_skill.py`(가짜 REST 서버, 로봇 없음). Qwen과 실제 로봇팔을 함께 쓴 종단 시험은 아직 하지 않았습니다.
+
+기존 그리퍼(open/close_gripper)·pick_object·place_object Skill은 바뀌지 않았습니다.

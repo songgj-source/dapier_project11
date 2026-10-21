@@ -1,7 +1,7 @@
 # 알려진 문제
 
 1. 실제 자연어 명령을 이용한 자동 주행은 최종 종단 검증되지 않았습니다. LLM UI 비이동 테스트와 별도 MuJoCo 테이블 1/3 주행 성공을 혼동하지 마세요.
-2. pick_object/place_object는 현재 실패를 반환하는 미구현 Skill입니다.
+2. pick_object/place_object는 현재 실패를 반환하는 미구현 Skill입니다. 진공흡착 로봇팔은 sort_object 계열 Tool로 연결합니다(docs/ARM_INTEGRATION.md). 이 연결은 가짜 REST 서버로만 시험했습니다.
 3. open_gripper/close_gripper 성공은 ROS 메시지 발행 성공이며 물리적 완료/그립 증거가 아닙니다.
 4. arm_command를 연결하는 NOMI Tool이 없습니다.
 5. 웹 UI 활성 모델 라벨이 Agent의 model_status 확인 전에는 실제 선택 모델과 다르게 보일 수 있습니다.

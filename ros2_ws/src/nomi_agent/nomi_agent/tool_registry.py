@@ -125,6 +125,7 @@ class ToolRegistry:
         from nomi_agent.skills.state_skill import StateSkill
         from nomi_agent.skills.location_skill import LocationSkill
         from nomi_agent.skills.weather_skill import WeatherSkill
+        from nomi_agent.skills.arm_rest_skill import ArmRestSkill
 
         return {
             "navigation": NavigationSkill(node),
@@ -132,6 +133,7 @@ class ToolRegistry:
             "state": StateSkill(node),
             "location": LocationSkill(node),
             "weather": WeatherSkill(node),
+            "arm": ArmRestSkill(node),
         }
 
     @staticmethod
@@ -242,6 +244,9 @@ class ToolRegistry:
                      (ArgumentSpec("city", "날씨를 확인할 도시 이름", required=False, max_length=100),),
                      lambda args: s["weather"].get_weather(args["city"]) if args.get("city") else SkillResult.fail("날씨를 확인할 도시가 필요합니다.", {"error_code": "missing_argument", "needs_clarification": True}), 12.0),
         ]
+        if "arm" in s:
+            from nomi_agent.skills.arm_tool_specs import arm_tool_specs
+            specs += arm_tool_specs(s["arm"], ToolSpec, ArgumentSpec)
         return {spec.name: spec for spec in specs}
 
     def get_tool_names(self) -> list[str]:
@@ -412,11 +417,12 @@ class ToolRegistry:
         return result
 
     def emergency_stop(self) -> None:
-        navigation = self.skills.get("navigation")
-        stop = getattr(navigation, "stop", None)
-        if callable(stop):
-            try:
-                stop()
-            except Exception as exc:
-                if self.node:
-                    self.node.get_logger().error(f"비상 정지 요청 실패: {exc}")
+        # 주행과 로봇팔을 모두 멈춘다. 한쪽 정지가 실패해도 다른 쪽은 계속 시도한다.
+        for name in ("navigation", "arm"):
+            stop = getattr(self.skills.get(name), "stop", None)
+            if callable(stop):
+                try:
+                    stop()
+                except Exception as exc:
+                    if self.node:
+                        self.node.get_logger().error(f"비상 정지 요청 실패({name}): {exc}")

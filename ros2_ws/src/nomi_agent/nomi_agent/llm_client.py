@@ -137,6 +137,11 @@ open_gripper
 close_gripper
 pick_object
 place_object
+look_at_table
+get_arm_status
+sort_object
+sort_all_objects
+arm_return_home
 get_robot_state
 get_user_location
 get_weather
@@ -299,6 +304,41 @@ arguments:
 }
 
 ==================================================
+로봇팔 물체 분류 (진공흡착 팔, 트레이 1·2·3번 칸)
+==================================================
+
+등록 물체는 white_box(흰 상자), red_cube(빨간 정육면체·큐브), tape_measure(줄자),
+unknown(목록에 없는 새 물체)뿐이다. 이 팔은 집기와 놓기를 한 번에 하므로
+이 물체들을 집거나 넣거나 정리하라는 요청에는 pick_object/place_object가 아니라 sort_object를 쓴다.
+칸을 말하지 않으면 slot을 빼고(기본 칸), unknown은 칸 번호가 꼭 필요하다.
+"새 물체", "새로운 물체", "모르는 물체", "등록 안 된 물체"는 object_name "unknown"이다.
+unknown은 시작한 뒤에 사람이 물체를 놓으므로, 작업대에 아직 새 물체가 없어도 look_at_table로 확인하지 말고 칸이 있으면 바로 sort_object를 호출한다.
+"다 정리해줘", "책상 정리해줘", "다 치워줘", "분류해줘", "전부 넣어", "모두 정리", "세 개 다"처럼 전부 넣으라는 말은 되묻지 말고 바로 sort_all_objects를 호출한다.
+
+예:
+
+빨간 큐브 넣어줘
+→ sort_object {"object_name": "red_cube"}
+
+줄자 1번 칸에 넣어
+→ sort_object {"object_name": "tape_measure", "slot": 1}
+
+새 물체 3번 칸에 넣어
+→ sort_object {"object_name": "unknown", "slot": 3}
+
+다 정리해줘 / 책상 정리해줘 / 세 개 모두 넣어
+→ sort_all_objects {}
+
+팔 접어 / 로봇팔 홈으로
+→ arm_return_home {}
+
+책상에 뭐 있어? / 뭐 넣을 수 있어?
+→ look_at_table {}
+
+로봇팔 지금 뭐 해?
+→ get_arm_status {}
+
+==================================================
 이동
 ==================================================
 
@@ -407,6 +447,7 @@ CHAT
 그리퍼
 물체 집기
 물체 놓기
+로봇팔 물체 분류·정리
 
 다음과 같은 후속 표현은 이전 대화와 연결한다.
 
@@ -1060,6 +1101,12 @@ Example:
             "'집으로 돌아가', '집으로 이동해', '충전소로 이동해'는 navigate_to(location=장소명)이다. "
             "이동 요청에 get_user_location을 호출하지 않는다. get_user_location은 사용자가 자기 위치를 묻거나 "
             "도시가 없는 날씨 요청에만 쓴다. 목적지 좌표는 추측하지 않고 웹 내비게이션이 저장 목록에서 확인한다. "
+            "흰 상자(white_box), 빨간 정육면체·큐브(red_cube), 줄자(tape_measure), 새 물체(unknown)를 "
+            "집거나 넣거나 정리하라는 요청은 sort_object(object_name, 칸을 말했을 때만 slot)로 한 번에 처리하고 "
+            "pick_object/place_object를 쓰지 않는다. '새 물체', '모르는 물체'는 object_name='unknown'이고 칸 번호가 필요하다. 새 물체는 시작한 뒤에 사람이 놓으므로 미리 look_at_table로 확인하지 않는다. "
+            "'다 정리해줘', '책상 정리해줘', '다 치워줘', '분류해줘', '전부 넣어'처럼 물체 이름 없이 정리하라면 되묻지 말고 바로 sort_all_objects를 호출하고, "
+            "팔을 접거나 HOME·홈으로 돌아가라면 arm_return_home, 작업대에 무엇이 있는지 물으면 look_at_table을 호출한다. "
+            "도구를 써야 할 때는 도구 이름을 글로 설명하지 말고 실제로 도구를 호출한다. "
             "여러 단계 요청은 앞 단계의 실제 결과를 확인한 다음 다음 도구를 호출한다. "
             "앞 단계가 실패하면 후속 도구를 호출하지 않는다. 모호하거나 필수 정보가 없으면 "
             "사용자가 특정 장소로 가기, 이동 또는 주행을 요청하면 목적지 번호가 있어도 "
